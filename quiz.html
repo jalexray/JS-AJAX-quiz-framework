@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<body onload="respond(0)"> <!-- I'll explain this line at the end of the file -->
+<!-- Because we're using AJAX, we need to include jQuery. A bit more on that later. -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
+
+
+<!--These first few lines set up style that I use in this example. These are not required in your project. But, they're handy-->
+<!-- Latest compiled and minified Twitter Bootstrap CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<!-- Optional theme -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+<!-- Latest compiled and minified JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+<!-- Here's the start of our quiz framework. In this, we use AJAX (which we included jQuery in line 5 for) to get a series of questions from a remote location (in this example, the file api.php). We then ask a random question from that series. On submission, we get a new question from the remote location.-->
+
+<!-- To begin, we'll make the outline of our page. It'll be a question, plus buttons that we use as choices. In this example, we'll have three buttons - "No", "I don't know", and "Yes". -->
+<!-- Again, I'm using Twitter Bootstrap for formatting. -->
+
+<div class="col-xs-6 col-xs-offset-3 text-center">
+	<div class="row">
+		<div class="col-xs-12">
+			<!-- On the next line, we set up the space to ask the question as a span in an H1 text block. We identify it using the id="question" parameter. We're also going to set up a space to keep up with the questionID (as a hidden input), which we'll use to associate an answer with a question in the AJAX function. This is going to be "questionID"; the contents can be empty; we'll use the value to keep up with the variable-->
+			<h1 style="white-space: nowrap;"><input id="questionID" value="0" class="hidden"/><span id="question">Question</span></h1>
+			<!--A note on UI: I've included a white-space:nowrap inline style. Generally, it's bad practice to include inline styling. Here, I do it because, if the line breaks, the choice boxes move on the page, which is a bad experience (and prevents you from completing a quiz very quickly). You can fix this in a number of ways. This is the laziest - a better one is putting divs at fixed positions on the page. -->
+		</div>
+	</div>
+	<div class="row">
+	<!-- In this row, we have the options. In this example, we have three buttons - "No", "Unknown", and "Yes". You can put as many or as few of these here as you want. You'll have to expand the function at the bottom of the page to deal with the number and contents of your options. -->
+		<div class="col-xs-4">
+			<!-- Notice on this button, and on the rest, I call the homemade function "respond(response)" on click and pass an integer as the response. I always use integers here, but you could also use a string, if you put it in single quotes. So onClick="respond('No')" would work, passing the string "No" to the function as response. In my opinion, using an integer simplifies the database transactions and offers more freedom for future changes. Up to you. -->
+			<button class="button btn btn-danger" onClick="respond(1)">No</button>
+		</div>
+		<div class="col-xs-4">
+			<button class="button btn btn-default" onClick="respond(2)">I don't know</button>
+		</div>
+		<div class="col-xs-4">
+			<button class="button btn btn-success" onClick="respond(3)">Yes</button>
+		</div>	
+	</div>
+</div>
+<!--Ok, that's it for setting up the page! Now we'll use AJAX to submit our answer and get a new question! Be sure you included jQuery at the top of the file.-->
+<script>
+// Let's make that function we called earlier, respond(response). 
+function respond(response){
+	// We want the question ID, so let's grab that from the hidden input earlier
+	var questionID = document.getElementById("questionID").value;
+	$.ajax({
+		// We'll submit this as a post (type can be get or post)
+		type: "POST",
+		// To our database endpoint, called api.php in this example. This doesn't have to be a php file! 
+		url: "api.php",
+		// We're sending an array of response and questionID. Consider adding more stuff - who submitted it, when it was submitted, etc.
+		data: {"response": response, "questionID": questionID},
+		// If we successfully submit it, we'll get a new question to ask (and a new ID) as a JSON. Check out api.php to see how this is done!
+		success: function(result){
+			var resultsDecoded = JSON.parse(result);
+			$("#question").html(resultsDecoded.newQuestionText);
+			document.getElementById("questionID").value = resultsDecoded.newQuestionID;
+		},
+	});
+}
+</script>
+</body> <!--At the body open tag, I added a onload=respond(1) tag. This is kind of a shortcut, and not necessarily one you want to use. It makes it so that, once the body is loaded, the repond script runs once with the hardcoded question ("Question") and the hardcoded questionID (0), which triggers a change in the content. It's ok to do this in the example, but once you're dynamically loading content from a database, there will be much better ways.-->
+</html>
